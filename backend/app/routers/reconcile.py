@@ -1,6 +1,6 @@
 from __future__ import annotations
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.db import connect
 from app.services import reconcile_service as svc
 
@@ -13,6 +13,8 @@ class RunIn(BaseModel):
 
 class SealIn(BaseModel):
     dock_day: str
+    # 硬闸：必填的预检批 id，服务端逐条校验，拒绝伪造/失效/跨日/未通过。
+    precheck_id: int = Field(gt=0)
 
 
 class FateIn(BaseModel):
@@ -34,7 +36,7 @@ def run_reconcile(body: RunIn):
 def seal(body: SealIn):
     conn = connect()
     try:
-        return svc.seal_day(conn, body.dock_day)
+        return svc.seal_day(conn, body.dock_day, body.precheck_id)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     finally:

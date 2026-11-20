@@ -85,13 +85,52 @@ CREATE TABLE IF NOT EXISTS reopen_requests (
   dock_day TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'none'
 );
+CREATE TABLE IF NOT EXISTS precheck_batches (
+  id INTEGER PRIMARY KEY,
+  precheck_no TEXT NOT NULL UNIQUE,
+  dock_day TEXT NOT NULL,
+  passed INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'valid',
+  legs_fingerprint TEXT NOT NULL,
+  scan_summary TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  invalidated_at TEXT,
+  invalidate_reason TEXT
+);
+CREATE TABLE IF NOT EXISTS precheck_findings (
+  id INTEGER PRIMARY KEY,
+  precheck_id INTEGER NOT NULL,
+  dock_day TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  supplier_code TEXT,
+  sku TEXT,
+  detail TEXT NOT NULL
+);
 '''
+
+# Columns added after the initial snapshot; applied idempotently for old DBs.
+_ADDED_COLUMNS = {
+    "reconcile_batches": [
+        ("precheck_id", "INTEGER"),
+        ("precheck_summary", "TEXT"),
+    ],
+}
+
+
+def migrate(conn) -> None:
+    for table, columns in _ADDED_COLUMNS.items():
+        existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        for name, decl in columns:
+            if name not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
 
 
 def seed_if_empty() -> None:
     conn = connect()
     try:
         conn.executescript(SCHEMA)
+        migrate(conn)
+        conn.commit()
         if conn.execute("SELECT COUNT(*) c FROM suppliers").fetchone()["c"]:
             return
         conn.execute("INSERT INTO settings(key, value) VALUES ('dock_day', ?)", ("2026-11-18",))

@@ -4,6 +4,7 @@ import Expects from './pages/Expects.vue'
 import Receives from './pages/Receives.vue'
 import Confirms from './pages/Confirms.vue'
 import Reconcile from './pages/Reconcile.vue'
+import Precheck from './pages/Precheck.vue'
 import Settings from './pages/Settings.vue'
 
 export default createRouter({
@@ -14,6 +15,7 @@ export default createRouter({
     { path: '/receives', component: Receives },
     { path: '/confirms', component: Confirms },
     { path: '/reconcile', component: Reconcile },
+    { path: '/precheck', component: Precheck },
     { path: '/settings', component: Settings },
   ],
 })

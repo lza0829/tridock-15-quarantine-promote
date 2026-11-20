@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from app.db import connect
 from app.services.gate import assert_writable
+from app.services import precheck_service
 
 router = APIRouter(tags=["lines"])
 
@@ -69,6 +70,7 @@ def add_expect(body: ExpectIn):
     conn = connect()
     try:
         assert_writable(conn, body.dock_day)
+        precheck_service.invalidate_day(conn, body.dock_day, "预报腿再装载")
         conn.execute(
             '''INSERT INTO expect_lines(doc_no, supplier_code, sku, dock_day, qty, note, created_at)
                VALUES (?,?,?,?,?,?,?)''',
@@ -104,6 +106,7 @@ def add_receive(body: ReceiveIn):
     conn = connect()
     try:
         assert_writable(conn, body.dock_day)
+        precheck_service.invalidate_day(conn, body.dock_day, "实收腿再装载")
         occurred = body.occurred_at or _now()
         conn.execute(
             '''INSERT INTO receive_lines(receive_no, supplier_code, sku, dock_day, qty, occurred_at, note, created_at)
@@ -149,6 +152,7 @@ def add_confirm(body: ConfirmIn):
     conn = connect()
     try:
         assert_writable(conn, body.dock_day)
+        precheck_service.invalidate_day(conn, body.dock_day, "回执腿再装载")
         conn.execute(
             '''INSERT INTO confirm_lines(confirm_no, supplier_code, sku, dock_day, qty, note, created_at)
                VALUES (?,?,?,?,?,?,?)''',

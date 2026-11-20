@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+backend/data/
+data/
+
+# Node
+node_modules/
+frontend/dist/
+.npm-cache/
+
+# OS / editor
+.DS_Store
+*.swp
